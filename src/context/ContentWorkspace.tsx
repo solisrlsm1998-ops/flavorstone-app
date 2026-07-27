@@ -3,11 +3,14 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import CreateContentDrawer from "@/components/content/CreateContentDrawer";
 import { listContent, createContent, updateContent, deleteContent } from "@/app/actions/content";
+import { listCatalogs } from "@/app/actions/catalog";
 
 export type ContentItem = Record<string, any>;
 
 type WorkspaceValue = {
   items: ContentItem[];
+  products: string[];
+  pillars: string[];
   loading: boolean;
   error: string;
   openCreateDrawer: () => void;
@@ -21,6 +24,8 @@ const WorkspaceContext = createContext<WorkspaceValue | null>(null);
 
 export function ContentWorkspaceProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<ContentItem[]>([]);
+  const [products, setProducts] = useState<string[]>([]);
+  const [pillars, setPillars] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -39,6 +44,23 @@ export function ContentWorkspaceProvider({ children }: { children: React.ReactNo
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // El catálogo no bloquea la vista: si falla, el formulario cae a sus defaults.
+  useEffect(() => {
+    let cancelled = false;
+
+    listCatalogs()
+      .then((data) => {
+        if (cancelled) return;
+        setProducts(data.products.map((item) => item.name));
+        setPillars(data.pillars.map((item) => item.name));
+      })
+      .catch(() => {});
 
     return () => {
       cancelled = true;
@@ -93,6 +115,8 @@ export function ContentWorkspaceProvider({ children }: { children: React.ReactNo
   const value = useMemo<WorkspaceValue>(
     () => ({
       items,
+      products,
+      pillars,
       loading,
       error,
       openCreateDrawer,
@@ -101,7 +125,18 @@ export function ContentWorkspaceProvider({ children }: { children: React.ReactNo
       deleteItem,
       updateContentItem,
     }),
-    [items, loading, error, openCreateDrawer, openEditDrawer, closeDrawer, deleteItem, updateContentItem],
+    [
+      items,
+      products,
+      pillars,
+      loading,
+      error,
+      openCreateDrawer,
+      openEditDrawer,
+      closeDrawer,
+      deleteItem,
+      updateContentItem,
+    ],
   );
 
   return (

@@ -40,6 +40,7 @@ function ContentToolbar({
               <option value="all">Platform</option>
               <option value="Instagram">Instagram</option>
               <option value="TikTok">TikTok</option>
+              <option value="LinkedIn">LinkedIn</option>
               <option value="YouTube">YouTube</option>
             </select>
 
@@ -50,9 +51,11 @@ function ContentToolbar({
             >
               <option value="all">Status</option>
               <option value="draft">Borrador</option>
+              <option value="design">En diseño</option>
               <option value="review">En revisión</option>
               <option value="approved">Aprobado</option>
               <option value="scheduled">Programado</option>
+              <option value="published">Publicado</option>
             </select>
 
             <select

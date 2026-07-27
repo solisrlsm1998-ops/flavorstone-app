@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, bigint } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, bigint, integer } from "drizzle-orm/pg-core";
 
 export const content = pgTable("content", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -28,6 +28,16 @@ export const content = pgTable("content", {
   createdBy: text("created_by"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Productos y pilares vivían hardcodeados en el formulario, así que el equipo
+// no podía agregar uno sin un deploy. Aquí se administran desde Configuración.
+export const catalogItems = pgTable("catalog_items", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  type: text("type").notNull(), // "product" | "pillar"
+  name: text("name").notNull(),
+  position: integer("position").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const contentMedia = pgTable("content_media", {

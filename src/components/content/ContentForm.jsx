@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AlertCircle, CheckCircle2, Loader2, Paperclip, RefreshCw, Trash2, UploadCloud } from "lucide-react";
 import { uploadContentMedia, deleteContentMediaBlob } from "../../app/actions/media";
 import { listContentMedia, createContentMedia, deleteContentMedia, setCoverImage } from "../../app/actions/content";
+import { useContentWorkspace } from "../../context/ContentWorkspace";
 import FormSection from "./FormSection";
 
 const selectClassName =
@@ -12,7 +13,8 @@ const selectClassName =
 const ACCEPTED_UPLOAD_EXTENSIONS = ["jpg", "jpeg", "png", "webp", "mp4"];
 const ACCEPTED_UPLOAD_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "video/mp4"];
 const ACCEPTED_UPLOAD_INPUT = ".jpg,.jpeg,.png,.webp,.mp4";
-const PRODUCT_OPTIONS = [
+// Respaldo por si el catálogo de Configuración aún no carga.
+const FALLBACK_PRODUCTS = [
   "Grape",
   "Fortezza",
   "Sapphire",
@@ -25,7 +27,6 @@ const PRODUCT_OPTIONS = [
   "Utensilios",
   "Cuchillos",
   "Accesorios",
-  "Otro",
 ];
 
 function getFileExtension(fileName = "") {
@@ -71,6 +72,12 @@ function ContentForm({ formState, onFieldChange, onSubmit, mode = "create", onCa
   const [mediaEntries, setMediaEntries] = useState([]);
   const [coverPreview, setCoverPreview] = useState(formState.coverImageUrl || "");
   const [mediaLoadState, setMediaLoadState] = useState({ loading: false, error: "" });
+
+  const { products, pillars } = useContentWorkspace();
+  const productOptions = useMemo(
+    () => [...(products?.length ? products : FALLBACK_PRODUCTS), "Otro"],
+    [products],
+  );
 
   useEffect(() => {
     setCoverPreview(formState.coverImageUrl || "");
@@ -285,7 +292,7 @@ function ContentForm({ formState, onFieldChange, onSubmit, mode = "create", onCa
               onChange={(event) => onFieldChange("productName", event.target.value)}
               className={selectClassName}
             >
-              {PRODUCT_OPTIONS.map((product) => (
+              {productOptions.map((product) => (
                 <option key={product} value={product}>{product}</option>
               ))}
             </select>
@@ -334,11 +341,17 @@ function ContentForm({ formState, onFieldChange, onSubmit, mode = "create", onCa
             <span className="mb-2 block font-medium text-gray-900">Strategic pillar</span>
             <input
               type="text"
+              list="pillar-options"
               value={formState.pillar}
               onChange={(event) => onFieldChange("pillar", event.target.value)}
               className={selectClassName}
               placeholder="Ej. Inspiración"
             />
+            <datalist id="pillar-options">
+              {(pillars || []).map((pillar) => (
+                <option key={pillar} value={pillar} />
+              ))}
+            </datalist>
           </label>
 
           <label className="text-sm text-gray-600">
@@ -689,9 +702,11 @@ function ContentForm({ formState, onFieldChange, onSubmit, mode = "create", onCa
               className={selectClassName}
             >
               <option value="draft">Borrador</option>
+              <option value="design">En diseño</option>
               <option value="review">En revisión</option>
               <option value="approved">Aprobado</option>
               <option value="scheduled">Programado</option>
+              <option value="published">Publicado</option>
             </select>
           </label>
         </div>
