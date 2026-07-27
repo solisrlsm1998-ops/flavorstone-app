@@ -278,6 +278,7 @@ function ContentForm({ formState, onFieldChange, onSubmit, mode = "create", onCa
             <span className="mb-2 block font-medium text-gray-900">Content title</span>
             <input
               type="text"
+              required
               value={formState.name}
               onChange={(event) => onFieldChange("name", event.target.value)}
               className={selectClassName}

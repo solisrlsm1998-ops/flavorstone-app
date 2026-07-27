@@ -39,7 +39,9 @@ function KanbanCard({ item }) {
               {item.productName || item.product_name || item.brand}
             </p>
           </div>
-          <h5 className="mt-2 text-sm font-semibold text-gray-900">{item.title}</h5>
+          <h5 className="mt-2 text-sm font-semibold text-gray-900">
+            {item.title || <span className="text-gray-400">Sin título</span>}
+          </h5>
         </div>
         <div className="flex flex-col items-end gap-1">
           <DistributionBadge distributionType={item.distributionType} />

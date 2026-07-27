@@ -11,7 +11,7 @@ function ContentCard({ item, onEdit, onDelete }) {
             {item.productName || item.product_name || item.brand}
           </p>
           <h4 className="mt-2 text-lg font-semibold text-gray-950">
-            {item.title}
+            {item.title || <span className="text-gray-400">Sin título</span>}
           </h4>
         </div>
         <div className="flex items-center gap-2">

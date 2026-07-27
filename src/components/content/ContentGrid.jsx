@@ -26,7 +26,9 @@ function ContentGrid({ items, view = "cards", onEdit, onDelete }) {
           <tbody className="divide-y divide-gray-100 text-gray-600">
             {items.map((item) => (
               <tr key={item.id} className="hover:bg-gray-50">
-                <td className="px-5 py-4 font-medium text-gray-900">{item.title}</td>
+                <td className="px-5 py-4 font-medium text-gray-900">
+                  {item.title || <span className="text-gray-400">Sin título</span>}
+                </td>
                 <td className="px-5 py-4">{item.productName || item.product_name || item.brand}</td>
                 <td className="px-5 py-4">{item.platform}</td>
                 <td className="px-5 py-4">
