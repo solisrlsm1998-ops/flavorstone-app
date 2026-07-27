@@ -31,7 +31,7 @@ function getProductState(productValue) {
   return { productName: "Otro", customProductName: normalized };
 }
 
-function CreateContentDrawer({ open, onClose, onSave, editItem = null, mode = "create", onCancel }) {
+function CreateContentDrawer({ open, onClose, onSave, editItem, mode = "create", onCancel }) {
   const [contentId, setContentId] = useState(editItem?.id || null);
   const [formState, setFormState] = useState({
     name: "",

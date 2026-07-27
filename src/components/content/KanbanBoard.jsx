@@ -1,6 +1,8 @@
+"use client";
+
 import { DndContext, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { useMemo, useState } from "react";
-import { useContent } from "../../context/ContentContext";
+import { useContent } from "../../context/ContentWorkspace";
 import KanbanColumn from "./KanbanColumn";
 
 const columns = [

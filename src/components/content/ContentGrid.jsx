@@ -3,7 +3,9 @@ import DistributionBadge from "./DistributionBadge";
 import EmptyState from "./EmptyState";
 import KanbanBoard from "./KanbanBoard";
 
-function ContentGrid({ items = [], view = "cards", onEdit, onDelete }) {
+function ContentGrid({ items, view = "cards", onEdit, onDelete }) {
+  items = items || [];
+
   if (!items.length) {
     return <EmptyState />;
   }

@@ -1,7 +1,7 @@
 "use server";
 
 import { auth } from "@clerk/nextjs/server";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { content, contentMedia } from "@/db/schema";
 import { buildContentPayload } from "@/lib/content";
@@ -15,8 +15,7 @@ async function requireUser() {
 
 export async function listContent() {
   await requireUser();
-  const rows = await db.select().from(content).orderBy(content.createdAt);
-  return rows.reverse();
+  return db.select().from(content).orderBy(desc(content.createdAt));
 }
 
 export async function createContent(formValues: Record<string, unknown>) {
@@ -115,6 +114,26 @@ function toMediaViewModel(row: typeof contentMedia.$inferSelect) {
     thumbnail_url: row.thumbnailUrl,
     workspace_id: row.workspaceId,
   };
+}
+
+export async function listAllMedia() {
+  await requireUser();
+
+  const rows = await db
+    .select({
+      media: contentMedia,
+      contentTitle: content.title,
+      productName: content.productName,
+    })
+    .from(contentMedia)
+    .leftJoin(content, eq(contentMedia.contentId, content.id))
+    .orderBy(desc(contentMedia.createdAt));
+
+  return rows.map((row) => ({
+    ...toMediaViewModel(row.media),
+    content_title: row.contentTitle || "",
+    product_name: row.productName || "",
+  }));
 }
 
 export async function listContentMedia(contentId: string) {
