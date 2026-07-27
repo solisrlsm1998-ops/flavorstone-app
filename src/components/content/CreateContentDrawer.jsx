@@ -61,6 +61,11 @@ function CreateContentDrawer({ open, onClose, onSave, editItem = null, mode = "c
     if (open && editItem) {
       const productState = getProductState(editItem.productName || editItem.product_name || editItem.brand);
 
+      // El drawer es una sola instancia reutilizada, así que el id inicial de
+      // useState se queda pegado del primer montaje: hay que refrescarlo aquí
+      // o las subidas de media creen que el contenido aún no existe.
+      setContentId(editItem.id || null);
+
       setFormState({
         name: editItem.title || "",
         productName: productState.productName,
