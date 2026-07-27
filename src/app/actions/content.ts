@@ -2,6 +2,7 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { desc, eq } from "drizzle-orm";
+import { del } from "@vercel/blob";
 import { db } from "@/db/client";
 import { content, contentMedia } from "@/db/schema";
 import { buildContentPayload } from "@/lib/content";
@@ -97,6 +98,21 @@ export async function updateContent(id: string, formValues: Record<string, unkno
 
 export async function deleteContent(id: string) {
   await requireUser();
+
+  // La FK borra las filas de content_media en cascada, pero los archivos en
+  // Blob storage no se van solos: hay que limpiarlos antes de perder las URLs.
+  const media = await db
+    .select({ fileUrl: contentMedia.fileUrl })
+    .from(contentMedia)
+    .where(eq(contentMedia.contentId, id));
+
+  const urls = media.map((row) => row.fileUrl).filter(Boolean);
+
+  if (urls.length) {
+    // Un archivo ya borrado en Blob no debe impedir borrar el contenido.
+    await del(urls).catch(() => {});
+  }
+
   await db.delete(content).where(eq(content.id, id));
   revalidatePath("/content");
 }
