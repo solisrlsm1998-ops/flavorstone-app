@@ -24,3 +24,10 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Clerk sigue en instancia de desarrollo (pk_test); ocultamos el aviso
+   hasta que haya dominio propio para crear la instancia de produccion. */
+[data-clerk-dev-mode-notice],
+[data-clerk-dev-mode-overlay] {
+  display: none !important;
+}
