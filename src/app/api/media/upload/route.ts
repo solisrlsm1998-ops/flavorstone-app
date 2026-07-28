@@ -2,7 +2,7 @@ import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
-const ALLOWED_CONTENT_TYPES = ["image/jpeg", "image/png", "image/webp", "video/mp4"];
+const ALLOWED_CONTENT_TYPES = ["image/jpeg", "image/png", "image/webp", "video/mp4", "application/pdf"];
 
 // Los archivos van del navegador directo a Blob. Pasarlos por una Server Action
 // los hacía cruzar la función serverless, que corta las peticiones de unos pocos

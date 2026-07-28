@@ -161,6 +161,7 @@ function toMediaViewModel(row: typeof contentMedia.$inferSelect) {
     storage_path: row.storagePath,
     mime_type: row.mimeType,
     media_type: row.mediaType,
+    role: row.role,
     size_bytes: row.sizeBytes,
     thumbnail_url: row.thumbnailUrl,
     workspace_id: row.workspaceId,
@@ -200,6 +201,7 @@ export async function createContentMedia(entry: {
   storagePath: string;
   mimeType: string;
   mediaType: string;
+  role?: string;
   sizeBytes?: number;
   thumbnailUrl?: string | null;
   workspaceId: string;

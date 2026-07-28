@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AlertCircle, CheckCircle2, Loader2, Paperclip, RefreshCw, Trash2, UploadCloud } from "lucide-react";
+import { AlertCircle, CheckCircle2, FileText, Loader2, Paperclip, RefreshCw, Trash2, UploadCloud } from "lucide-react";
 import { upload } from "@vercel/blob/client";
 import { deleteContentMediaBlob } from "../../app/actions/media";
 import { listContentMedia, createContentMedia, deleteContentMedia, setCoverImage } from "../../app/actions/content";
@@ -11,9 +11,15 @@ import FormSection from "./FormSection";
 const selectClassName =
   "w-full rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-purple-400 focus:bg-white";
 
-const ACCEPTED_UPLOAD_EXTENSIONS = ["jpg", "jpeg", "png", "webp", "mp4"];
-const ACCEPTED_UPLOAD_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "video/mp4"];
-const ACCEPTED_UPLOAD_INPUT = ".jpg,.jpeg,.png,.webp,.mp4";
+// La portada se muestra como imagen/video, así que no admite documentos.
+const COVER_EXTENSIONS = ["jpg", "jpeg", "png", "webp", "mp4"];
+const COVER_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "video/mp4"];
+const COVER_INPUT = ".jpg,.jpeg,.png,.webp,.mp4";
+
+// Adjuntos y referencias sí aceptan PDF (briefs, guías), como ya prometía la UI.
+const FILE_EXTENSIONS = [...COVER_EXTENSIONS, "pdf"];
+const FILE_MIME_TYPES = [...COVER_MIME_TYPES, "application/pdf"];
+const FILE_INPUT = `${COVER_INPUT},.pdf`;
 // Respaldo por si el catálogo de Configuración aún no carga.
 const FALLBACK_PRODUCTS = [
   "Grape",
@@ -35,17 +41,22 @@ function getFileExtension(fileName = "") {
   return segments.length > 1 ? segments.at(-1) : "";
 }
 
-function isAllowedUpload(file) {
+function isAllowedUpload(file, isCover) {
   const extension = getFileExtension(file?.name || "");
   const mimeType = `${file?.type || ""}`.toLowerCase();
+  const extensions = isCover ? COVER_EXTENSIONS : FILE_EXTENSIONS;
+  const mimeTypes = isCover ? COVER_MIME_TYPES : FILE_MIME_TYPES;
 
-  return ACCEPTED_UPLOAD_EXTENSIONS.includes(extension)
-    && (!mimeType || ACCEPTED_UPLOAD_MIME_TYPES.includes(mimeType));
+  return extensions.includes(extension) && (!mimeType || mimeTypes.includes(mimeType));
 }
 
 function getMediaType({ mimeType = "", fileName = "" }) {
   if (mimeType.startsWith("video/") || getFileExtension(fileName) === "mp4") {
     return "video";
+  }
+
+  if (mimeType === "application/pdf" || getFileExtension(fileName) === "pdf") {
+    return "document";
   }
 
   return "image";
@@ -54,6 +65,11 @@ function getMediaType({ mimeType = "", fileName = "" }) {
 function isVideoFile(entry) {
   const mimeType = `${entry?.mime_type || ""}`.toLowerCase();
   return getMediaType({ mimeType, fileName: entry?.file_name }) === "video";
+}
+
+function isDocumentFile(entry) {
+  const mimeType = `${entry?.mime_type || ""}`.toLowerCase();
+  return getMediaType({ mimeType, fileName: entry?.file_name }) === "document";
 }
 
 function resolveProductName(formState) {
@@ -84,7 +100,8 @@ function ContentForm({ formState, onFieldChange, onSubmit, mode = "create", onCa
     setCoverPreview(formState.coverImageUrl || "");
   }, [formState.coverImageUrl]);
 
-  const acceptInputValue = useMemo(() => ACCEPTED_UPLOAD_INPUT, []);
+  const acceptInputValue = useMemo(() => FILE_INPUT, []);
+  const coverAcceptValue = useMemo(() => COVER_INPUT, []);
 
   const coverEntry = useMemo(
     () => mediaEntries.find((entry) => entry.file_url === coverPreview),
@@ -145,13 +162,16 @@ function ContentForm({ formState, onFieldChange, onSubmit, mode = "create", onCa
       return;
     }
 
-    if (!isAllowedUpload(file)) {
+    if (!isAllowedUpload(file, type === "cover")) {
       setUploadState((current) => ({
         ...current,
         [type]: {
           ...current[type],
           loading: false,
-          error: "Solo se permiten archivos JPG, JPEG, PNG, WEBP y MP4.",
+          error:
+            type === "cover"
+              ? "La portada admite JPG, JPEG, PNG, WEBP o MP4."
+              : "Solo se permiten archivos JPG, JPEG, PNG, WEBP, MP4 y PDF.",
         },
       }));
       return;
@@ -200,6 +220,7 @@ function ContentForm({ formState, onFieldChange, onSubmit, mode = "create", onCa
         storagePath,
         mimeType: file.type,
         mediaType,
+        role: type,
         sizeBytes: file.size,
         thumbnailUrl: mediaType === "image" ? fileUrl : null,
       });
@@ -483,7 +504,7 @@ function ContentForm({ formState, onFieldChange, onSubmit, mode = "create", onCa
                 {coverEntry ? "Reemplazar" : "Seleccionar"}
                 <input
                   type="file"
-                  accept={acceptInputValue}
+                  accept={coverAcceptValue}
                   className="hidden"
                   onChange={(event) => {
                     void handleFileUpload("cover", event.target.files?.[0], coverEntry || null);
@@ -670,6 +691,10 @@ function ContentForm({ formState, onFieldChange, onSubmit, mode = "create", onCa
                     <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-gray-200 bg-gray-100">
                       {isVideoFile(entry) ? (
                         <video src={entry.file_url} className="h-full w-full object-cover" preload="metadata" muted playsInline />
+                      ) : isDocumentFile(entry) ? (
+                        <span className="flex h-full w-full items-center justify-center text-gray-400">
+                          <FileText size={18} />
+                        </span>
                       ) : (
                         <img src={entry.file_url} alt={entry.file_name || "Media preview"} className="h-full w-full object-cover" />
                       )}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { FileVideo, ImageIcon } from "lucide-react";
+import { FileText, FileVideo, ImageIcon } from "lucide-react";
 import AppShell from "@/components/layout/AppShell";
 import { listAllMedia } from "@/app/actions/content";
 
@@ -10,6 +10,7 @@ type MediaEntry = {
   file_name: string;
   file_url: string;
   media_type: string;
+  role: string;
   size_bytes: number | string | null;
   content_title: string;
   product_name: string;
@@ -86,6 +87,7 @@ function LibraryView() {
           { key: "all", label: `Todos (${entries.length})` },
           { key: "image", label: "Imágenes" },
           { key: "video", label: "Videos" },
+          { key: "document", label: "Documentos" },
         ].map(({ key, label }) => (
           <button
             key={key}
@@ -112,6 +114,8 @@ function LibraryView() {
             <div className="flex h-40 items-center justify-center overflow-hidden bg-gray-100">
               {entry.media_type === "video" ? (
                 <video src={entry.file_url} className="h-full w-full object-cover" preload="metadata" muted playsInline />
+              ) : entry.media_type === "document" ? (
+                <FileText size={32} className="text-gray-400" />
               ) : (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={entry.file_url} alt={entry.file_name} className="h-full w-full object-cover" />
@@ -124,9 +128,20 @@ function LibraryView() {
 
               <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-gray-500">
                 <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5">
-                  {entry.media_type === "video" ? <FileVideo size={12} /> : <ImageIcon size={12} />}
+                  {entry.media_type === "video" ? (
+                    <FileVideo size={12} />
+                  ) : entry.media_type === "document" ? (
+                    <FileText size={12} />
+                  ) : (
+                    <ImageIcon size={12} />
+                  )}
                   {entry.media_type}
                 </span>
+                {entry.role && entry.role !== "attachment" ? (
+                  <span className="rounded-full bg-purple-50 px-2 py-0.5 text-purple-700">
+                    {entry.role === "cover" ? "portada" : "referencia"}
+                  </span>
+                ) : null}
                 {entry.product_name ? (
                   <span className="rounded-full bg-gray-100 px-2 py-0.5">{entry.product_name}</span>
                 ) : null}

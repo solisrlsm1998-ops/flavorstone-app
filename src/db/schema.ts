@@ -50,6 +50,9 @@ export const contentMedia = pgTable("content_media", {
   storagePath: text("storage_path").notNull().default(""),
   mimeType: text("mime_type").notNull().default(""),
   mediaType: text("media_type").notNull().default("image"),
+  // "cover" | "attachment" | "reference": sin esto no se puede distinguir un
+  // archivo de referencia de un adjunto una vez guardado.
+  role: text("role").notNull().default("attachment"),
   sizeBytes: bigint("size_bytes", { mode: "number" }),
   thumbnailUrl: text("thumbnail_url"),
   workspaceId: text("workspace_id").notNull().default("default-workspace"),
