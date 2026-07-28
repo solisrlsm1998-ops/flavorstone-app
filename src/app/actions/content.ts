@@ -59,7 +59,42 @@ export async function createContent(formValues: Record<string, unknown>) {
 
 export async function updateContent(id: string, formValues: Record<string, unknown>) {
   await requireUser();
-  const payload = buildContentPayload(formValues);
+
+  const [existing] = await db.select().from(content).where(eq(content.id, id));
+  if (!existing) throw new Error("No se encontró el contenido.");
+
+  // Hay callers que mandan una actualización parcial (arrastrar en el kanban
+  // solo manda el estado). Sin este merge, buildContentPayload rellena el
+  // resto con vacíos y el update borra el registro entero.
+  const has = (key: string) => Object.prototype.hasOwnProperty.call(formValues, key);
+  const pick = (key: string, fallback: unknown) => (has(key) ? formValues[key] : fallback);
+
+  const merged = {
+    name: pick("name", pick("title", existing.title)),
+    objective: pick("objective", pick("description", existing.description)),
+    productName: pick("productName", existing.productName),
+    customProductName: pick("customProductName", ""),
+    platform: pick("platform", existing.platform),
+    format: pick("format", pick("type", existing.type)),
+    statusKey: pick("statusKey", pick("status", existing.statusKey)),
+    distributionType: pick("distributionType", existing.distributionType),
+    pillar: pick("pillar", existing.pillar),
+    date: pick("date", pick("publishDate", existing.publishDate)),
+    time: pick("time", pick("publishTime", existing.publishTime)),
+    campaign: pick("campaign", existing.campaign),
+    audience: pick("audience", existing.audience),
+    hook: pick("hook", existing.hook),
+    copy: pick("copy", existing.copy),
+    cta: pick("cta", existing.cta),
+    hashtags: pick("hashtags", existing.hashtags),
+    designer: pick("designer", existing.designer),
+    reviewer: pick("reviewer", existing.reviewer),
+    responsible: pick("responsible", existing.responsible),
+    notes: pick("notes", existing.notes),
+    coverImageUrl: pick("coverImageUrl", pick("cover_image_url", existing.coverImageUrl)),
+  };
+
+  const payload = buildContentPayload(merged);
 
   const [row] = await db
     .update(content)
