@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AlertCircle, CheckCircle2, Loader2, Paperclip, RefreshCw, Trash2, UploadCloud } from "lucide-react";
-import { uploadContentMedia, deleteContentMediaBlob } from "../../app/actions/media";
+import { upload } from "@vercel/blob/client";
+import { deleteContentMediaBlob } from "../../app/actions/media";
 import { listContentMedia, createContentMedia, deleteContentMedia, setCoverImage } from "../../app/actions/content";
 import { useContentWorkspace } from "../../context/ContentWorkspace";
 import FormSection from "./FormSection";
@@ -65,9 +66,9 @@ function resolveProductName(formState) {
 
 function ContentForm({ formState, onFieldChange, onSubmit, mode = "create", onCancel, contentId, onMediaChange }) {
   const [uploadState, setUploadState] = useState({
-    cover: { loading: false, error: "", fileName: "", previewUrl: "" },
-    attachment: { loading: false, error: "", fileName: "" },
-    reference: { loading: false, error: "", fileName: "" },
+    cover: { loading: false, error: "", fileName: "", previewUrl: "", progress: 0 },
+    attachment: { loading: false, error: "", fileName: "", progress: 0 },
+    reference: { loading: false, error: "", fileName: "", progress: 0 },
   });
   const [mediaEntries, setMediaEntries] = useState([]);
   const [coverPreview, setCoverPreview] = useState(formState.coverImageUrl || "");
@@ -165,28 +166,41 @@ function ContentForm({ formState, onFieldChange, onSubmit, mode = "create", onCa
         loading: true,
         error: "",
         fileName: file.name,
+        progress: 0,
       },
     }));
 
     try {
-      const uploadForm = new FormData();
-      uploadForm.set("file", file);
-      uploadForm.set("contentId", contentId);
-      uploadForm.set("productName", productName || "workspace");
+      const timestamp = Date.now();
+      const safeName = file.name.replace(/\s+/g, "-").replace(/[^a-zA-Z0-9._-]/g, "");
+      const storagePath = `${productName || "workspace"}/${contentId}/${timestamp}-${safeName}`;
+      const mediaType = getMediaType({ mimeType: file.type, fileName: file.name });
 
-      const uploaded = await uploadContentMedia(uploadForm);
-      const fileUrl = uploaded.fileUrl;
-      const mediaType = uploaded.mediaType;
+      // Sube del navegador directo a Blob: si pasara por el servidor, los
+      // videos se caerían por el límite de tamaño de la función serverless.
+      const blob = await upload(storagePath, file, {
+        access: "public",
+        handleUploadUrl: "/api/media/upload",
+        contentType: file.type || undefined,
+        onUploadProgress: ({ percentage }) => {
+          setUploadState((current) => ({
+            ...current,
+            [type]: { ...current[type], progress: Math.round(percentage) },
+          }));
+        },
+      });
+
+      const fileUrl = blob.url;
 
       const data = await createContentMedia({
         workspaceId: productName || "default-workspace",
         contentId,
-        fileName: uploaded.fileName,
+        fileName: file.name,
         fileUrl,
-        storagePath: uploaded.storagePath,
-        mimeType: uploaded.mimeType,
+        storagePath,
+        mimeType: file.type,
         mediaType,
-        sizeBytes: uploaded.sizeBytes,
+        sizeBytes: file.size,
         thumbnailUrl: mediaType === "image" ? fileUrl : null,
       });
 
@@ -480,9 +494,17 @@ function ContentForm({ formState, onFieldChange, onSubmit, mode = "create", onCa
             </div>
 
             {uploadState.cover.loading ? (
-              <div className="mt-3 flex items-center gap-2 text-sm text-purple-700">
-                <Loader2 size={15} className="animate-spin" />
-                Subiendo cover image...
+              <div className="mt-3">
+                <div className="flex items-center gap-2 text-sm text-purple-700">
+                  <Loader2 size={15} className="animate-spin" />
+                  Subiendo cover image... {uploadState.cover.progress || 0}%
+                </div>
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-purple-100">
+                  <div
+                    className="h-full rounded-full bg-purple-600 transition-all"
+                    style={{ width: `${uploadState.cover.progress || 0}%` }}
+                  />
+                </div>
               </div>
             ) : null}
 
@@ -546,9 +568,17 @@ function ContentForm({ formState, onFieldChange, onSubmit, mode = "create", onCa
             </div>
 
             {uploadState.attachment.loading ? (
-              <div className="mt-3 flex items-center gap-2 text-sm text-purple-700">
-                <Loader2 size={15} className="animate-spin" />
-                Subiendo archivo...
+              <div className="mt-3">
+                <div className="flex items-center gap-2 text-sm text-purple-700">
+                  <Loader2 size={15} className="animate-spin" />
+                  Subiendo archivo... {uploadState.attachment.progress || 0}%
+                </div>
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-purple-100">
+                  <div
+                    className="h-full rounded-full bg-purple-600 transition-all"
+                    style={{ width: `${uploadState.attachment.progress || 0}%` }}
+                  />
+                </div>
               </div>
             ) : null}
 
@@ -589,9 +619,17 @@ function ContentForm({ formState, onFieldChange, onSubmit, mode = "create", onCa
             </div>
 
             {uploadState.reference.loading ? (
-              <div className="mt-3 flex items-center gap-2 text-sm text-purple-700">
-                <Loader2 size={15} className="animate-spin" />
-                Subiendo referencia...
+              <div className="mt-3">
+                <div className="flex items-center gap-2 text-sm text-purple-700">
+                  <Loader2 size={15} className="animate-spin" />
+                  Subiendo referencia... {uploadState.reference.progress || 0}%
+                </div>
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-purple-100">
+                  <div
+                    className="h-full rounded-full bg-purple-600 transition-all"
+                    style={{ width: `${uploadState.reference.progress || 0}%` }}
+                  />
+                </div>
               </div>
             ) : null}
 

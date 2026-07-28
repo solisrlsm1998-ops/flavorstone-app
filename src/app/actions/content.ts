@@ -205,6 +205,12 @@ export async function createContentMedia(entry: {
   workspaceId: string;
 }) {
   await requireUser();
+
+  // El contentId viene del cliente; sin esto se podrían colgar archivos de un
+  // id inexistente y quedarían huérfanos fuera de todo flujo de borrado.
+  const [parent] = await db.select({ id: content.id }).from(content).where(eq(content.id, entry.contentId));
+  if (!parent) throw new Error("El contenido asociado ya no existe.");
+
   const [row] = await db.insert(contentMedia).values(entry).returning();
   revalidatePath("/content");
   return toMediaViewModel(row);
