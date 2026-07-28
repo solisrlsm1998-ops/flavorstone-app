@@ -18,7 +18,12 @@ function ContentWorkspaceView() {
   const filteredItems = useMemo(
     () =>
       items.filter((item) => {
-        const matchesSearch = !search || `${item.title || ""}`.toLowerCase().includes(search.toLowerCase());
+        // El campo dice "Buscar contenido", así que debe cubrir más que el título.
+        const haystack = [item.title, item.productName, item.campaign, item.pillar, item.description, item.hook]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        const matchesSearch = !search || haystack.includes(search.toLowerCase());
         const matchesPlatform = platform === "all" || item.platform === platform;
         const matchesStatus = status === "all" || item.statusKey === status;
         const matchesDistribution = distributionType === "all" || item.distributionType === distributionType;

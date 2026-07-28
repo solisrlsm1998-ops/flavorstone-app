@@ -1,30 +1,19 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import ContentForm from "./ContentForm";
+import { useContentWorkspace } from "../../context/ContentWorkspace";
 
-const predefinedProducts = [
-  "Grape",
-  "Fortezza",
-  "Sapphire",
-  "Quartz",
-  "Diamond",
-  "Samurai",
-  "Sky Blue",
-  "Comales",
-  "Sartenes",
-  "Utensilios",
-  "Cuchillos",
-  "Accesorios",
-];
-
-function getProductState(productValue) {
+// El catálogo se administra en Configuración, así que la lista tiene que venir
+// de ahí: con una lista fija, un producto nuevo se abriría como "Otro".
+function getProductState(productValue, catalog) {
   const normalized = `${productValue || ""}`.trim();
+  const known = catalog?.length ? catalog : [];
 
   if (!normalized) {
-    return { productName: "Grape", customProductName: "" };
+    return { productName: known[0] || "Otro", customProductName: "" };
   }
 
-  if (predefinedProducts.includes(normalized)) {
+  if (known.includes(normalized)) {
     return { productName: normalized, customProductName: "" };
   }
 
@@ -32,6 +21,7 @@ function getProductState(productValue) {
 }
 
 function CreateContentDrawer({ open, onClose, onSave, editItem, mode = "create", onCancel }) {
+  const { products } = useContentWorkspace();
   const [contentId, setContentId] = useState(editItem?.id || null);
   const [formState, setFormState] = useState({
     name: "",
@@ -59,7 +49,10 @@ function CreateContentDrawer({ open, onClose, onSave, editItem, mode = "create",
 
   useEffect(() => {
     if (open && editItem) {
-      const productState = getProductState(editItem.productName || editItem.product_name || editItem.brand);
+      const productState = getProductState(
+        editItem.productName || editItem.product_name || editItem.brand,
+        products,
+      );
 
       // El drawer es una sola instancia reutilizada, así que el id inicial de
       // useState se queda pegado del primer montaje: hay que refrescarlo aquí
@@ -96,7 +89,7 @@ function CreateContentDrawer({ open, onClose, onSave, editItem, mode = "create",
       setContentId(null);
       setFormState({
         name: "",
-        productName: "Grape",
+        productName: products?.[0] || "Grape",
         customProductName: "",
         campaign: "",
         platform: "Instagram",
@@ -118,7 +111,7 @@ function CreateContentDrawer({ open, onClose, onSave, editItem, mode = "create",
         notes: "",
       });
     }
-  }, [editItem, open]);
+  }, [editItem, open, products]);
 
   function handleFieldChange(key, value) {
     setFormState((current) => ({ ...current, [key]: value }));
